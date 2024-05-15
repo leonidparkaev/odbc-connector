@@ -1,10 +1,10 @@
 ﻿using System.Data.Odbc;
 using Newtonsoft.Json.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace OdbcConnector
 {
-
-    public class OdbcConn
+    public class OdbcConn()
     {
         public string GetFullConnectionString(string Driver, string Database, string User, string PWD)
         {
@@ -25,18 +25,20 @@ namespace OdbcConnector
             return ConnectionParams;
         }
 
-        public string SendSqlQuery(string DSN, string QueryString)
+        public string GetDataInJsonString(string DSN, string QueryString)
         {
             OdbcConnection DbConnection = new OdbcConnection("DSN=" + DSN);
 
             try
             {
                 DbConnection.Open();
+                WinLogger.cWinLogger.Logger.LogInformation($"Подключение к базе данных через DSN {DSN} выполнено.");
             }
             catch (OdbcException ex)
             {
-                Console.WriteLine("Подключение к базе данных не удалось:");
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"Подключение к базе данных через DSN {DSN} не удалось:\n{ex.Message}");
+                WinLogger.cWinLogger.Logger.LogError($"Подключение к базе данных через DSN {DSN} не удалось:\n{ex.Message}");
+                return $"Подключение к базе данных через DSN {DSN} не удалось:\n{ex.Message}";
             }
 
             OdbcCommand DbCommand = DbConnection.CreateCommand();
@@ -45,6 +47,7 @@ namespace OdbcConnector
             try
             {
                 OdbcDataReader DbReader = DbCommand.ExecuteReader();
+                WinLogger.cWinLogger.Logger.LogInformation($"Данные по запросу {QueryString} получены");
 
                 int fieldCount = DbReader.FieldCount;
                 string[] colNames = new string[fieldCount];
@@ -101,17 +104,20 @@ namespace OdbcConnector
             }
             catch (OdbcException ex)
             {
-                Console.WriteLine("Отправка команды " + QueryString + " не удалась:");
-                return ex.Message;
+                Console.WriteLine($"Данные не получены или не удалось объединить полученные данные в JSON:\n{ex.Message}");
+                WinLogger.cWinLogger.Logger.LogError($"Данные не получены или не удалось объединить полученные данные в JSON:\n{ex.Message}");
+                return $"Данные не получены или не удалось объединить полученные данные в JSON:\n{ex.Message}";
             }
         }
 
-        public JObject GetDataInJson(string DSN, string QueryString)
+        public JObject GetDataInJsonObject(string DSN, string QueryString)
         {
-            string jsonString = SendSqlQuery(DSN, QueryString);
+            string jsonString = GetDataInJsonString(DSN, QueryString);
+            Console.WriteLine(jsonString.Count());
             JObject jsonObject = JObject.Parse(jsonString);
 
             return jsonObject;
         }
+
     }
 }

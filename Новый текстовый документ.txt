@@ -1,0 +1,14 @@
+using System.Net;
+using System.Net.Sockets;
+
+namespace OdbcConnector
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            OdbcConn OdbcConnector = new OdbcConn();
+            OdbcConnector.GetDataInJsonObject("mysql64", "SELECT * FROM CITY");
+        }
+    }
+}
